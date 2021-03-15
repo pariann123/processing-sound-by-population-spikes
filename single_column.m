@@ -1,7 +1,7 @@
 
 function single_column
 N_E = 100;
-N_I = 100;
+N_I = 50;
 vs0 =[rand(N_E,1);rand(N_I,1);rand(N_E,1);rand(N_I,1)]; % order is [E,I,x,y]
 
 final= rate_auditory(0,vs0);
@@ -46,7 +46,6 @@ size(final)
     e = ((e_max-e_min)*(e_temp-e_temp_min)/(e_temp_max-e_temp_min))+e_min; % scaling
     ei_final = sort(e);
 
-    j = 1:N_E; % constant throughout every neurons
     sum_E = J_ee/N_E * sum(U.*x.*E) + (J_ei/N_I * (sum(U.*y.*I)));
     out_E = max(0,sum_E + ee_final + s); %relu
     sum_I= J_ie/N_E * sum(E) + J_ii/N_I * sum(I);
