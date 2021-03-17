@@ -3,7 +3,7 @@ function A1
 N_E = 2;
 N_I = 2;
 P = 5;
-p=3
+
 global J_ee0 J_ei0 J_ii0 J_ie0 J_ee1 J_ee2 J_ie1 J_ie2;
 
 J_ee0 = 6;
