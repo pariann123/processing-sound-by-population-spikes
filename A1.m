@@ -153,7 +153,8 @@ subplot(2,2,4); plot(tt,Oy); title('y')
             sum1_I = [sum1_I, sum(q_sumI)];
             
             %h = ones(P,1); % change h
-            h = 2*(abs(P- P/2))/P *ones(P,1); % middle neuron receives the strongest
+%             h = 2*(abs(P- P/2))/P *ones(P,1); % middle neuron receives the strongest
+            h = sptial(A)*ones(P,1)
             s = z*h;
             sum3_E(q) = sum(s);
         end
