@@ -1,19 +1,20 @@
 function A1
-N_E = 5;
-N_I = 5;
+N_E = 2;
+N_I = 2;
 P = 5;
 E_range = N_E;
 I_range = N_E+N_I;
 x_range = 2*N_E+N_I;
-lambdaX = 0.25;
+lambdaC = 0.25;
 alpha = 2;
-delta_left = 5;
-delta_right = 5;
+D = 5
+D_left = 5;
+D_right = 5;
 J_ei0 = -4;
 J_ii0 = -0.5;
 
 
-s=0; %sensory
+z = 0; %sensory
 U = 0.5;
 tau = 0.001; % tau constant
 tau_ref = 0.003;
@@ -54,7 +55,7 @@ for i=1:P
 end
 
 rate_auditory(0,vs)
-tspan = [-2 2];
+tspan = [0 0.1];
 [tt,xx] = ode45(@rate_auditory,tspan,vs);
 
 
@@ -63,6 +64,29 @@ OI = xx(1:length(tt),E_range*P+1:I_range*P);
 Ox = xx(1:length(tt),I_range*P+1: x_range*P);
 Oy = xx(1:length(tt),x_range*P+1:end);
 
+E_range = N_E;
+I_range = N_E + N_I;
+x_range = 2*N_E + N_I;
+
+I = vs(E_range*P+1:I_range*P);
+        I_mat = reshape(I, N_I, P);
+        x = vs(I_range*P+1:x_range*P);
+        x_mat = reshape(x, N_E,P);
+        y = vs(x_range*P+1:end);
+        y_mat = reshape(y, N_I,P);
+        
+% time, columns, neurons
+mOE = zeros(length(tt),P);
+mOI = zeros (length(tt),P);
+mOx = zeros(length(tt),P);
+mOy = zeros(length(tt),P);
+
+for i=1:P
+    mOE(:,i) = mean(OE(:,1:E_range),2);
+    mOI(:,i) = mean(OI(E_range+1:I_range),2);
+    mOx(:,i) = mean(Ox(I_range+1:x_range),2);
+    mOy(:,i) = mean(Oy(x_range+1:end),2);
+end
 
 mOE = mean(OE,2);
 mOI = mean(OI,2);
@@ -93,10 +117,10 @@ subplot(2,2,4); plot(tt,Oy); title('y')
         x_mat = reshape(x, N_E,P);
         y = vs(x_range*P+1:end);
         y_mat = reshape(y, N_I,P);
-        %     E_mat = vs(1:N_E,1:P);
-        %     I_mat = vs(N_E+1:N_E+N_I,1:P);
-        %     x_mat = vs(N_E+N_I+1: 2*N_E+N_I,1:P);
-        %     y_mat = vs(2*N_E+N_I+1:end,1:P);
+        
+        if t > 0
+            z = 4; %zeta
+        end
         
         
         for q=1:P
@@ -128,12 +152,17 @@ subplot(2,2,4); plot(tt,Oy); title('y')
             sum1_E = [sum1_E,sum(q_sumE)];
             sum1_I = [sum1_I, sum(q_sumI)];
             
+            %h = ones(P,1); % change h
+            h = 2*(abs(P- P/2))/P *ones(P,1); % middle neuron receives the strongest
+            s = z*h;
+            sum3_E(q) = sum(s);
         end
         
         sum2_E = (J_ei0/N_I) * sum(U.*y_mat.*I_mat);
         %s=0 BUT double check with markus
         
-        out_E = max(0,sum1_E + sum2_E + ee_test); %relu
+        
+        out_E = max(0,sum1_E + sum2_E + ee_test + sum3_E); %relu
         
         
         sum_I = sum1_I +J_ii0/N_I * sum(I_mat);
@@ -166,6 +195,16 @@ subplot(2,2,4); plot(tt,Oy); title('y')
         else
             out = 0.0015;
         end
-        
+    end
+
+    function out = spatial(A)
+%         for i = 1:length(x)
+            if A <= alpha
+                peak_mag = lambdaC;
+            else
+                peak_mag = lambdaC + ((A-alpha)/D; %do we need D_left?
+            end      
+            
+        out = A*exp(-abs(Q-M)/peak_mag;
     end
 end
