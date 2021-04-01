@@ -1,18 +1,28 @@
 function A1
-N_E = 2;
-N_I = 2;
-P = 5;
+N_E = 100;
+N_I = 100;
+P = 15;
+
 E_range = N_E;
 I_range = N_E+N_I;
 x_range = 2*N_E+N_I;
+
+J_ei0 = -4;
+J_ie0 = 0.5;
+J_ii0 = -0.5;
+J_ee0 = 6;
+J_ee2 = 0.015;
+J_ee1 = 0.045;
+J_ie1 = 0.0035;
+J_ie2 = 0.0015;
+
 lambdaC = 0.25;
-alpha = 2;
-D = 5
 D_left = 5;
 D_right = 5;
-J_ei0 = -4;
-J_ii0 = -0.5;
 
+alpha = 2;
+A = zeros(P,1);
+A(8) = 8;
 
 z = 0; %sensory
 U = 0.5;
@@ -23,7 +33,7 @@ tau_rec = 0.8;
 
 %% background synaptic inputs
 % excitatory
-ee_test = [];
+ee_test = []; 
 ei_test = [];
 
 for i = 1:P
@@ -53,10 +63,17 @@ for i=1:P
     vs0 =[rand(N_E,1);rand(N_I,1);rand(N_E,1);rand(N_I,1)]; % order is [E,I,x,y]
     vs = [vs; vs0];
 end
-
-rate_auditory(0,vs)
-tspan = [0 0.1];
+ 
+tspan = [-5 5];
+% run simulation to time zero
+E_non_zero = true(N_E,P);
 [tt,xx] = ode45(@rate_auditory,tspan,vs);
+
+% run simulation from time zero
+% vs = xx(end,:)';
+% tspan = [0 2];
+% % E_non_zero = reshape(xx(end,1:N_E*P)>0,N_E,P); % <<<<<<<<<
+% [tt,xx] = ode45(@rate_auditory,tspan,vs);
 
 
 OE = xx(1:length(tt),1:E_range*P);
@@ -82,33 +99,41 @@ mOx = zeros(length(tt),P);
 mOy = zeros(length(tt),P);
 
 for i=1:P
-    mOE(:,i) = mean(OE(:,1:E_range),2);
-    mOI(:,i) = mean(OI(E_range+1:I_range),2);
-    mOx(:,i) = mean(Ox(I_range+1:x_range),2);
-    mOy(:,i) = mean(Oy(x_range+1:end),2);
+    mOE(:,i) = mean(OE(:,(1:N_E)+(i-1)*N_E),2);
+    mOI(:,i) = mean(OI(:,(1:N_I)+(i-1)*N_I),2);
+    mOx(:,i) = mean(Ox(:,(1:N_E)+(i-1)*N_E),2);
+    mOy(:,i) = mean(Oy(:,(1:N_I)+(i-1)*N_I),2);
 end
 
-mOE = mean(OE,2);
-mOI = mean(OI,2);
-close all;
-figure;
+% close all;
+figure(1);
 it = floor(length(tt)/2);
 plot(mOE,mOI);
 hold on
 title('phase-plane diagram')
 
-figure;
+figure(2);
 subplot(2,2,1); plot(tt,OE); title('Excitatory')
 hold on; plot(tt,mOE,'linewidth',2);
 subplot(2,2,2); plot(tt,OI); title('Inhibitory')
 subplot(2,2,3); plot(tt,Ox); title('x')
 subplot(2,2,4); plot(tt,Oy); title('y')
 
+figure(3);
+for i = 1:P
+    subplot(3,5,i);
+    plot(tt,mOE(:,i));
+    ylim([0 100]);
+end
+
+figure(4);
+imagesc(mOE)
+
+
 % %% nested function
     function out = rate_auditory(t,vs)
         
         % state variables in matrix and vector form
-        
         E = vs(1:E_range*P);
         E_mat = reshape(E,N_E,P);
         I = vs(E_range*P+1:I_range*P);
@@ -119,8 +144,9 @@ subplot(2,2,4); plot(tt,Oy); title('y')
         y_mat = reshape(y, N_I,P);
         
         if t > 0
-            z = 4; %zeta
+            z = 1; %zeta
         end
+        
         
         
         for q=1:P
@@ -140,34 +166,37 @@ subplot(2,2,4); plot(tt,Oy); title('y')
             q_sumI = [];
             sum1_E=[];
             sum1_I= [];
+            
+            
             for R = R_range
                 var1 = j_ee(abs(R))/N_E;
                 var2 = sum(U*x_mat(:,q+R).*E_mat(:,q+R));
                 final = var1.*var2;
-                q_sumE = [q_sumE,final];
+%                 q_sumE = [q_sumE,final];
                 sum_e = sum(E_mat(:,q+R)); %sum of E for the I rate
-                sum_I = (j_ie(abs(R))/N_E) * sum_e;
-                q_sumI = [q_sumI,sum_I];
+                sum_I = (j_ie(abs(R))/N_I) * sum_e;
+%                 q_sumI = [q_sumI,sum_I];
             end
+            q_sumE = [q_sumE,final];
+            q_sumI = [q_sumI,sum_I];
             sum1_E = [sum1_E,sum(q_sumE)];
             sum1_I = [sum1_I, sum(q_sumI)];
             
-            %h = ones(P,1); % change h
-%             h = 2*(abs(P- P/2))/P *ones(P,1); % middle neuron receives the strongest
-            h = sptial(A)*ones(P,1)
+%             h = ones(P,1); % change h
+            h = spatial(q);
             s = z*h;
             sum3_E(q) = sum(s);
         end
         
-        sum2_E = (J_ei0/N_I) * sum(U.*y_mat.*I_mat);
+         sum2_E = (J_ei0/N_I) * sum(U.*y_mat.*I_mat);
         %s=0 BUT double check with markus
         
         
-        out_E = max(0,sum1_E + sum2_E + ee_test + sum3_E); %relu
+        out_E = max(0,sum1_E + sum2_E + ee_test + E_non_zero.*sum3_E); %relu
         
         
         sum_I = sum1_I +J_ii0/N_I * sum(I_mat);
-        out_I = max(0,sum_I+ei_final); %relu
+        out_I = max(0,sum_I+ei_test); %relu
         
         dEdt = (-E_mat + (1-tau_ref*E_mat).*out_E)/tau;
         dIdt = (-I_mat + (1-tau_ref*I_mat).*out_I)/tau;
@@ -180,32 +209,29 @@ subplot(2,2,4); plot(tt,Oy); title('y')
 
     function out = j_ee(R)
         if R == 0
-            out = 6;
+            out = J_ee0;
         elseif R == 1
-            out = 0.045;
+            out = J_ee1;
         else
-            out = 0.015;
+            out = J_ee2;
         end
     end
 
     function out = j_ie(R)
         if R == 0
-            out = 6;
+            out = J_ie0; 
         elseif R == 1
-            out = 0.0035;
+            out = J_ie1;
         else
-            out = 0.0015;
+            out = J_ie2;
         end
     end
 
-    function out = spatial(A)
-%         for i = 1:length(x)
-            if A <= alpha
-                peak_mag = lambdaC;
-            else
-                peak_mag = lambdaC + ((A-alpha)/D; %do we need D_left?
-            end      
-            
-        out = A*exp(-abs(Q-M)/peak_mag;
+    function out = spatial(q)
+        lambda_S_left = max(lambdaC,lambdaC+(A-alpha)/D_left); % lambda_S_left for each Amplitude
+        lambda_S_right = max(lambdaC,lambdaC+(A-alpha)/D_right); % lambda_S_right for each Amplitude
+        M = (1:P)'; % frequencies
+        lambda_S = (q < M).*lambda_S_left + (q >= M).*lambda_S_right;
+        out = A.*(exp(-abs(q-M)./lambda_S));
     end
 end
