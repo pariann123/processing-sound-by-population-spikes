@@ -22,7 +22,9 @@ D_right = 5;
 
 alpha = 2;
 A = zeros(P,1);
-A(8) = 8;
+A(8) = 12;
+% A(3) = 4;
+
 
 z = 0; %sensory
 U = 0.5;
@@ -57,23 +59,28 @@ for i = 1:P
     ei_test = [ei_test,ei_final];
 end
 
+ee_test = repmat(ee_final,1,P);
+
+ei_test = repmat(ei_final,1,P);
 
 vs= [];
 for i=1:P
     vs0 =[rand(N_E,1);rand(N_I,1);rand(N_E,1);rand(N_I,1)]; % order is [E,I,x,y]
     vs = [vs; vs0];
 end
- 
-tspan = [-5 5];
+
+            
+rate_auditory(0,vs)
+tspan = [-5 0];
 % run simulation to time zero
 E_non_zero = true(N_E,P);
 [tt,xx] = ode45(@rate_auditory,tspan,vs);
 
 % run simulation from time zero
-% vs = xx(end,:)';
-% tspan = [0 2];
-% % E_non_zero = reshape(xx(end,1:N_E*P)>0,N_E,P); % <<<<<<<<<
-% [tt,xx] = ode45(@rate_auditory,tspan,vs);
+vs = xx(end,:)';
+tspan = [0 0.8];
+% E_non_zero = reshape(xx(end,1:N_E*P)>0,N_E,P); % <<<<<<<<<
+[tt,xx] = ode45(@rate_auditory,tspan,vs);
 
 
 OE = xx(1:length(tt),1:E_range*P);
@@ -127,13 +134,15 @@ for i = 1:P
 end
 
 figure(4);
-imagesc(mOE)
-
+uimagesc(1:P, tt, mOE)
+ylim([0 0.07])
+set(gca,'ydir','normal')
 
 % %% nested function
     function out = rate_auditory(t,vs)
         
         % state variables in matrix and vector form
+        
         E = vs(1:E_range*P);
         E_mat = reshape(E,N_E,P);
         I = vs(E_range*P+1:I_range*P);
@@ -147,7 +156,9 @@ imagesc(mOE)
             z = 1; %zeta
         end
         
-        
+
+        sum1_E=[];
+        sum1_I= [];
         
         for q=1:P
             switch q
@@ -162,23 +173,20 @@ imagesc(mOE)
                 otherwise
                     R_range = -2:2;
             end
+            
             q_sumE=[];
             q_sumI = [];
-            sum1_E=[];
-            sum1_I= [];
-            
             
             for R = R_range
                 var1 = j_ee(abs(R))/N_E;
                 var2 = sum(U*x_mat(:,q+R).*E_mat(:,q+R));
                 final = var1.*var2;
-%                 q_sumE = [q_sumE,final];
+                q_sumE = [q_sumE,final];
                 sum_e = sum(E_mat(:,q+R)); %sum of E for the I rate
                 sum_I = (j_ie(abs(R))/N_I) * sum_e;
-%                 q_sumI = [q_sumI,sum_I];
+                q_sumI = [q_sumI,sum_I];
             end
-            q_sumE = [q_sumE,final];
-            q_sumI = [q_sumI,sum_I];
+            
             sum1_E = [sum1_E,sum(q_sumE)];
             sum1_I = [sum1_I, sum(q_sumI)];
             
@@ -192,7 +200,7 @@ imagesc(mOE)
         %s=0 BUT double check with markus
         
         
-        out_E = max(0,sum1_E + sum2_E + ee_test + E_non_zero.*sum3_E); %relu
+        out_E = max(0,sum1_E + sum2_E + ee_test + sum3_E.*sum3_E); %relu
         
         
         sum_I = sum1_I +J_ii0/N_I * sum(I_mat);
