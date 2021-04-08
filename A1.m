@@ -138,7 +138,7 @@ title('phase-plane diagram')
 figure(3);
 for i = 1:P
 %     subplot(3,5,i); 
-    plot(tt,mOE(:,i)); hold on;
+    plot(tt,mOI(:,i)); hold on;
     xlim([0 0.1])
 end
 
@@ -173,11 +173,6 @@ set(gca,'ydir','normal')
         x_mat = reshape(x, N_E,P);
         y = vs(x_range*P+1:end);
         y_mat = reshape(y, N_I,P);
-        
-        if t > 0
-            z = 1; %zeta
-        end
-        
 
         sum1_E=[];
         sum1_I= [];
@@ -211,8 +206,21 @@ set(gca,'ydir','normal')
             
             sum1_E = [sum1_E,sum(q_sumE)];
             sum1_I = [sum1_I, sum(q_sumI)];
+            mid = round(P/2);
             
-%             h = ones(P,1); % change h
+            if t > 0
+                for mid:
+                    z = 1;
+                end
+                for mid-1 | mid + 1:
+                    z = 0.5;
+                end
+                for mid-2 | mid+2:
+                    z = 0.2;
+                end
+            end
+            
+            
             h = spatial(q);
             s = z*h;
             sum3_E(q) = sum(s);
