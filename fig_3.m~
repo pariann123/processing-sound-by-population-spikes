@@ -1,4 +1,5 @@
-function A1
+
+function fig_3
 N_E = 100;
 N_I = 100;
 P = 15;
@@ -22,7 +23,7 @@ D_right = 5;
 
 alpha = 2;
 A = zeros(P,1);
-A(8) = 12;
+A(8) = 0;
 % A(3) = 4;
 
 
@@ -77,7 +78,7 @@ E_non_zero = true(N_E,P);
 
 % run simulation from time zero
 vs = xx(end,:)';
-tspan = [0 0.8];
+tspan = [0 0.1];
 % E_non_zero = reshape(xx(end,1:N_E*P)>0,N_E,P); % <<<<<<<<<
 [tt,xx] = ode45(@rate_auditory,tspan,vs);
 
@@ -112,53 +113,34 @@ for i=1:P
 end
 
 % close all;
-figure(1);
-it = floor(length(tt)/2);
-plot(mOE,mOI);
-hold on
-title('phase-plane diagram')
-% 
-% figure; 
-% plot(tt,mOE(:,1),'linewidth',1); hold on; 
-% plot(tt,mOI(:,1),'--','linewidth',1); xlim([-0.05 0.3])
-% 
-% figure; 
-% plot(tt,mOE(:,8),'linewidth',1); hold on; 
-% plot(tt,mOI(:,8),'--','linewidth',1); xlim([-0.05 0.3])
-
-
+% figure(1);
+% it = floor(length(tt)/2);
+% plot(mOE,mOI);
+% hold on
+% title('phase-plane diagram')
 % 
 % figure(2);
-% subplot(2,2,1); plot(tt,mOE(:,1),'linewidth',1); title('Excitatory'); hold on; 
-% plot(tt,mOI(:,1),'--','linewidth',1);
+% subplot(2,2,1); plot(tt,OE); title('Excitatory')
+% hold on; plot(tt,mOE,'linewidth',2);
 % subplot(2,2,2); plot(tt,OI); title('Inhibitory')
 % subplot(2,2,3); plot(tt,Ox); title('x')
 % subplot(2,2,4); plot(tt,Oy); title('y')
+% 
+% test1 = mean(mOE);
+% test2 = mOE(:,2);
 
-figure(3);
-for i = 1:P
-%     subplot(3,5,i); 
-    plot(tt,mOE(:,i)); hold on;
-    xlim([0 0.1])
-end
+
+% figure(3);
+% for i = 1:P
+%     subplot(3,5,i);
+%     plot(tt,mOE(:,i));
+%     ylim([0 100]);
+% end
 
 figure(4);
 uimagesc(1:P, tt, mOE)
-ylim([0 0.07])
+ylim([0 0.1])
 set(gca,'ydir','normal')
-% 
-% OE_1 = OE(:,1:4);
-% OI_1 = OI(:,1:4);
-% MOE_1 = mean(OE_1,2);
-% MOI_1 = mean(OI_1,2);
-% 
-% OE_8 = OE(:,36:40);
-% OI_8 = OE(:,36:40);
-% MOE_8 = mean(OE_8,2);
-% MOI_8 = mean(OI_8,2);
-% figure; plot(tt,MOE_1,'--'); hold on; plot(tt,MOI_1);xlim([0 1])
-% figure; plot(tt,MOE_8, '--'); hold on; plot(tt,MOI_8); xlim([0 1])
-
 
 % %% nested function
     function out = rate_auditory(t,vs)
@@ -174,8 +156,17 @@ set(gca,'ydir','normal')
         y = vs(x_range*P+1:end);
         y_mat = reshape(y, N_I,P);
         
+        mid = round(P/2);
+        
         if t > 0
-            z = 1; %zeta
+            if mid == 8:
+                z = 1;
+            elseif mid-1 == 7 | mid+1 == 9:
+                z = 0.5;
+            else if mid-2 == 
+                z = 0.5;
+            else if P == 
+            z = 0.6; %zeta
         end
         
 
@@ -212,15 +203,12 @@ set(gca,'ydir','normal')
             sum1_E = [sum1_E,sum(q_sumE)];
             sum1_I = [sum1_I, sum(q_sumI)];
             
-%             h = ones(P,1); % change h
             h = spatial(q);
             s = z*h;
             sum3_E(q) = sum(s);
         end
         
-         sum2_E = (J_ei0/N_I) * sum(U.*y_mat.*I_mat);
-        %s=0 BUT double check with markus
-        
+        sum2_E = (J_ei0/N_I) * sum(U.*y_mat.*I_mat);
         
         out_E = max(0,sum1_E + sum2_E + ee_test + sum3_E.*sum3_E); %relu
         
